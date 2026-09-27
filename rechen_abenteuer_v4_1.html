@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rechen-Abenteuer</title>
+<style>
+:root{--blue:#1769aa;--green:#2f9e44;--red:#e03131;--purple:#7b2cbf;--yellow:#ffd43b;--ink:#17324d;--bg:#eef7ff}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#e7f5ff,#fff9db);color:var(--ink);min-height:100vh}
+main{max-width:780px;margin:auto;padding:18px}
+h1{text-align:center;margin:2px 0 5px;font-size:clamp(1.8rem,6vw,3rem)} .sub{text-align:center;margin:0 0 14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;padding:12px 16px;border-radius:20px;box-shadow:0 6px 20px #0001;border:2px solid #dbeafe}
+.score{font-weight:900;font-size:1.15rem}.score span{font-size:1.6rem;color:var(--green)} .goal{font-weight:800}
+.bar{height:12px;background:#e9ecef;border-radius:20px;overflow:hidden;margin-top:10px}.fill{height:100%;width:0;background:linear-gradient(90deg,#74c0fc,#51cf66,#ffd43b);transition:.35s}
+.card{margin-top:16px;background:#fff;border-radius:26px;padding:20px;box-shadow:0 8px 24px #0001;border:2px solid #edf2ff;position:relative;overflow:hidden}
+.badge{text-align:center;font-weight:900;color:var(--purple);font-size:1.1rem;margin-bottom:8px}
+.matrix{margin:8px auto 16px;border-collapse:collapse;font-size:1.3rem}.matrix td{width:100px;height:80px;text-align:center;border:3px solid var(--purple)}
+.corner{font-size:2rem;font-weight:900}.shape{display:inline-flex;align-items:center;justify-content:center;font-weight:900}
+.circleShape{border:4px solid #087f8c;border-radius:50%;width:58px;height:58px}.squareShape{border:4px solid var(--red);width:58px;height:58px}.cloud{border:4px solid #82b414;border-radius:45%;padding:8px 10px;min-width:62px}
+input{width:65px;height:52px;font-size:1.4rem;text-align:center;border:3px dashed #868e96;border-radius:12px;background:#fff}
+input:focus{outline:4px solid #d0ebff;border-color:var(--blue)}
+.quick{font-size:clamp(2.4rem,10vw,4.5rem);font-weight:900;text-align:center;padding:28px 5px 22px;color:#234}
+.quick input{width:120px;height:76px;font-size:2rem;vertical-align:middle;position:relative;z-index:5;pointer-events:auto;touch-action:manipulation;background:#fff;cursor:text}
+.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+button{border:0;border-radius:15px;padding:12px 21px;font-size:1.05rem;font-weight:850;cursor:pointer;box-shadow:0 3px 0 #0002}button:active{transform:translateY(2px);box-shadow:none}
+#check{background:var(--green);color:#fff}#next{background:var(--blue);color:#fff}
+#message{text-align:center;min-height:38px;font-size:1.3rem;font-weight:900;margin:12px 0 4px}.good{color:var(--green)}.bad{color:#c92a2a}
+.hint{text-align:center;font-size:.9rem;color:#6c757d;margin-bottom:0}
+.celebrate{animation:pop .55s ease}.star{pointer-events:none;position:absolute;font-size:2rem;animation:fly 1s ease-out forwards;pointer-events:none}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.035)}100%{transform:scale(1)}}
+@keyframes fly{0%{opacity:1;transform:translateY(20px) scale(.4) rotate(0)}100%{opacity:0;transform:translateY(-180px) scale(1.4) rotate(180deg)}}
+.win{font-size:1.45rem;color:#f08c00}
+.hidden{display:none}
+@media(max-width:520px){main{padding:10px}.card{padding:12px}.matrix td{width:88px;height:70px}input{width:57px}.top{font-size:.9rem}}
+
+.successOverlay{
+  position:fixed;inset:0;z-index:9999;
+  display:none;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#e7f5ff 0%,#fff9db 50%,#ebfbee 100%);
+  padding:24px;text-align:center;overflow:hidden;
+}
+.successOverlay.show{display:flex;animation:overlayIn .3s ease-out}
+.successBox{position:relative;z-index:2;max-width:720px;animation:successPop .55s cubic-bezier(.2,.9,.25,1.25)}
+.successEmoji{font-size:clamp(4rem,16vw,8rem);margin-bottom:12px}
+.successText{font-size:clamp(2rem,9vw,4.7rem);line-height:1.05;font-weight:950;color:#1769aa;text-shadow:0 3px 0 #fff}
+.successPoints{margin-top:20px;font-size:clamp(1.2rem,5vw,2rem);font-weight:900;color:#2f9e44}
+.successNext{margin-top:30px;background:#1971c2;color:white;font-size:1.25rem;padding:15px 28px}
+.overlayStar{position:absolute;font-size:clamp(1.5rem,6vw,3.5rem);animation:twinkle 1.2s ease-in-out infinite alternate;pointer-events:none}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+@keyframes successPop{0%{transform:scale(.45);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes twinkle{from{transform:scale(.65) rotate(-12deg);opacity:.45}to{transform:scale(1.25) rotate(12deg);opacity:1}}
+</style>
+</head>
+<body><main>
+<h1>🌟 Rechen-Abenteuer 🌟</h1>
+<p class="sub">Sammle Punkte mit Rechenmatrizen und Überraschungsaufgaben!</p>
+<div class="top"><div class="goal">🎯 Ziel: 50 Punkte</div><div class="score">Punkte: <span id="score">0</span> ⭐</div></div>
+<div class="bar"><div class="fill" id="fill"></div></div>
+<div class="card" id="card">
+<div class="badge" id="badge"></div>
+<div id="matrixArea">
+<table class="matrix">
+<tr><td class="corner" id="op">+</td><td id="b1"></td><td id="b2"></td></tr>
+<tr><td id="a1"></td><td id="c1"></td><td id="c2"></td></tr>
+<tr><td id="a2"></td><td id="c3"></td><td id="c4"></td></tr>
+</table>
+<p class="hint">Fülle die drei leeren Felder aus.</p>
+</div>
+<div id="quickArea" class="hidden"><div class="quick"><span id="qtext"></span> = <input id="qanswer" inputmode="numeric"></div><p class="hint" id="qhint"></p></div>
+<div id="message"></div>
+<div class="actions"><button id="check">✓ Prüfen</button><button id="next">Neue Aufgabe</button></div>
+</div>
+</main>
+<script>
+let score=0, task={}, locked=false, taskNo=0, penalized=false;
+const ids=["a1","a2","b1","b2","c1","c2","c3","c4"], $=id=>document.getElementById(id);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a, calc=(op,a,b)=>op==="+"?a+b:a-b;
+function updateScore(){score=Math.max(0,Math.min(50,score));$("score").textContent=score;$("fill").style.width=(score/50*100)+"%"}
+function makeValues(){
+ let op=Math.random()<.5?"+":"-",a1,a2,b1,b2,cs;
+ do{
+  if(op==="+"){b1=rnd(1,10);b2=rnd(1,10);a1=rnd(1,20-Math.max(b1,b2));a2=rnd(1,20-Math.max(b1,b2))}
+  else{b1=rnd(1,10);b2=rnd(1,10);let m=Math.max(b1,b2)+1;a1=rnd(m,20);a2=rnd(m,20)}
+  cs=[calc(op,a1,b1),calc(op,a1,b2),calc(op,a2,b1),calc(op,a2,b2)]
+ }while(cs.some(x=>x<0||x>20));
+ return{type:"matrix",op,a1,a2,b1,b2,c1:cs[0],c2:cs[1],c3:cs[2],c4:cs[3]}
+}
+function validBlankSet(b){return [["a1","b1","c1"],["a1","b2","c2"],["a2","b1","c3"],["a2","b2","c4"]].every(eq=>eq.filter(x=>b.includes(x)).length<=1)}
+function chooseBlanks(){let c=[];for(let i=0;i<8;i++)for(let j=i+1;j<8;j++)for(let k=j+1;k<8;k++){let b=[ids[i],ids[j],ids[k]];if(validBlankSet(b))c.push(b)}return c[rnd(0,c.length-1)]}
+function shape(id,v){let cl=id[0]==="a"?"circleShape":id[0]==="b"?"squareShape":"cloud";return `<span class="shape ${cl}">${v}</span>`}
+function matrixTask(){
+ task=makeValues();task.blanks=chooseBlanks();$("matrixArea").classList.remove("hidden");$("quickArea").classList.add("hidden");
+ $("badge").textContent=task.op==="+"?"🧩 Plus-Matrix":"🧩 Minus-Matrix";$("op").textContent=task.op;
+ ids.forEach(id=>$(id).innerHTML=task.blanks.includes(id)?`<input inputmode="numeric" data-id="${id}" aria-label="Fehlende Zahl">`:shape(id,task[id]));
+}
+function quickTask(){
+ $("matrixArea").classList.add("hidden");$("quickArea").classList.remove("hidden");
+ let multiplication=Math.random()<.5,a,b,ans;
+ if(multiplication){a=rnd(1,10);b=rnd(1,10);ans=a*b;task={type:"quick",ans};$("qtext").textContent=`${a} × ${b}`;$("qhint").textContent="Kleines Einmaleins";$("badge").textContent="⚡ Blitzaufgabe: Mal"}
+ else{a=rnd(10,50);b=rnd(1,a);ans=a-b;task={type:"quick",ans};$("qtext").textContent=`${a} − ${b}`;$("qhint").textContent="Minus im Zahlenraum bis 50";$("badge").textContent="⚡ Blitzaufgabe: Minus"}
+ $("qanswer").disabled=false;$("qanswer").value="";$("qanswer").style.pointerEvents="auto";
+}
+function newTask(){
+ locked=false;penalized=false;taskNo++;$("message").textContent="";$("message").className="";
+ // Every third task is a mixed-in quick exercise.
+ if(taskNo%3===0)quickTask();else matrixTask();
+ setTimeout(()=>{let i=document.querySelector("input:not([disabled])");if(i){i.removeAttribute("disabled");i.focus()}},80)
+}
+function celebrate(){
+ const card=$("card");card.classList.remove("celebrate");void card.offsetWidth;card.classList.add("celebrate");
+ for(let i=0;i<10;i++){let s=document.createElement("span");s.className="star";s.textContent=["⭐","✨","🎉","🌟"][rnd(0,3)];s.style.left=rnd(8,90)+"%";s.style.top=rnd(45,80)+"%";s.style.animationDelay=(i*.04)+"s";card.appendChild(s);setTimeout(()=>s.remove(),1300)}
+}
+
+function showSuccess(){
+ const cheers=[
+  "Das hast du super gemacht!",
+  "Wow! Du bist ein echter Rechenprofi!",
+  "Fantastisch gerechnet!",
+  "Sogar der Taschenrechner staunt!",
+  "Dein Rechenhirn läuft auf Turbo!",
+  "Bist du etwa der beste Rechner der ganzen Welt?"
+ ];
+ $("successText").textContent=cheers[rnd(0,cheers.length-1)];
+ $("successPoints").textContent=score>=50?"🏆 50 Punkte – Ziel erreicht!":"⭐ +1 Punkt · Jetzt hast du "+score+" Punkte!";
+ $("successOverlay").classList.add("show");
+}
+function hideSuccess(){
+ $("successOverlay").classList.remove("show");
+ newTask();
+}
+
+function check(){
+ if(locked)return;
+ let ok=false, incomplete=false;
+ if(task.type==="matrix"){
+  let inputs=[...document.querySelectorAll("#matrixArea input")];incomplete=inputs.some(i=>i.value==="");
+  ok=!incomplete&&inputs.every(i=>Number(i.value)===task[i.dataset.id]);
+ }else{
+  let i=$("qanswer");incomplete=i.value==="";ok=!incomplete&&Number(i.value)===task.ans;
+ }
+ if(incomplete){$("message").textContent="Bitte erst alle Felder ausfüllen. 🙂";$("message").className="bad";return}
+ if(ok){
+  locked=true;score++;updateScore();celebrate();
+  if(score>=50){$("message").innerHTML="🏆 <span class='win'>50 Punkte! Großartig – Ziel erreicht!</span> 🏆"}
+  else {
+    const cheers=[
+      "🎉 Gut gemacht! +1 Punkt – du rechnest wie ein Profi!",
+      "🌟 Richtig! +1 Punkt – deine Zahlen haben heute keine Chance!",
+      "🥳 Klasse! +1 Punkt – Mathe kann sich schon mal warm anziehen!",
+      "🚀 Volltreffer! +1 Punkt – du rechnest schneller als eine Rakete!",
+      "🧠 Stark! +1 Punkt – dein Rechenhirn läuft auf Turbo!",
+      "🏆 Super! +1 Punkt – bist du etwa der beste Rechner der ganzen Welt?",
+      "😄 Richtig! +1 Punkt – sogar der Taschenrechner ist beeindruckt!",
+      "⭐ Perfekt! +1 Punkt – weiter so, Rechenmeister!"
+    ];
+    $("message").textContent=cheers[rnd(0,cheers.length-1)];
+  }
+  $("message").className="good";
+  document.querySelectorAll("input").forEach(i=>i.disabled=true);
+  setTimeout(showSuccess,350);
+ }else{
+  // One point at most per task is deducted, preventing repeated checking from farming penalties.
+  if(!penalized){score--;updateScore();penalized=true}
+  $("message").textContent="❌ Noch nicht richtig. −1 Punkt. Versuch es noch einmal! 💪";$("message").className="bad";
+ }
+}
+$("check").onclick=check;
+$("next").onclick=newTask;
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter" && !$("successOverlay")?.classList.contains("show")) check();
+});
+updateScore();
+newTask();
+
+// Der Overlay-Button wird erst verbunden, nachdem das komplette HTML geladen ist.
+window.addEventListener("DOMContentLoaded",()=>{
+  const successNext=document.getElementById("successNext");
+  if(successNext) successNext.onclick=hideSuccess;
+});
+</script>
+
+<div id="successOverlay" class="successOverlay" role="dialog" aria-modal="true" aria-live="assertive">
+  <span class="overlayStar" style="left:8%;top:12%">⭐</span>
+  <span class="overlayStar" style="left:22%;top:76%;animation-delay:.2s">✨</span>
+  <span class="overlayStar" style="right:10%;top:18%;animation-delay:.4s">🌟</span>
+  <span class="overlayStar" style="right:20%;bottom:12%;animation-delay:.6s">⭐</span>
+  <span class="overlayStar" style="left:48%;top:7%;animation-delay:.8s">✨</span>
+  <div class="successBox">
+    <div class="successEmoji">🎉</div>
+    <div id="successText" class="successText">Das hast du super gemacht!</div>
+    <div id="successPoints" class="successPoints"></div>
+    <button id="successNext" class="successNext">Weiter zur nächsten Aufgabe 🚀</button>
+  </div>
+</div>
+
+</body></html>
